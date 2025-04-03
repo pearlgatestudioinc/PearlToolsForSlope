@@ -79,6 +79,16 @@
         display: block; /* Make the button appear as a block element */
         margin-bottom: 20px; /* Add spacing below the button */
       }
+
+      @media (max-width: 480px) {
+        #ElevationPoints,
+        #DistanceForPoints {
+          display: inline-block; /* Keep them side by side */
+          margin-right: 10px; /* Adjust spacing for smaller screens */
+          width: 45%; /* Reduce width to fit side by side */
+          vertical-align: top; /* Align them to the top */
+        }
+      }
     </style>
   </head>
 
