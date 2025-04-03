@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Floating Textboxes</title>
+    <title>Pearl Tools For Slopes</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -12,17 +12,31 @@
 
       #container {
         margin-top: 20px;
+        width: 200px; /* Ensure consistent width for both containers */
+      }
+
+      #ElevationPoints,
+      #DistanceForPoints {
+        display: inline-block; /* Display the containers side by side */
+        vertical-align: top; /* Align them to the top */
+        margin-right: 20px; /* Add some spacing between the columns */
+        width: 200px; /* Ensure consistent width for both containers */
       }
 
       .textbox-wrapper {
         display: flex; /* Use inline-flex to keep elements in a row */
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* Add spacing between rows */
       }
 
       .textbox-wrapper label {
         width: 15px; /* Fixed width for label */
-        margin-right: 5px; /* Reduce the gap between label and textbox */
+        margin-right: 10px; /* Ensure consistent spacing between label and textbox */
+      }
+
+      #DistanceForPoints .textbox-wrapper label {
+        width: 20px; /* Fixed width for label */
+        margin-right: 10px; /* Ensure consistent spacing between label and textbox */
       }
 
       .textbox-wrapper input {
@@ -34,39 +48,65 @@
         background: url("./Icons/btn_refresh_f.png") no-repeat center center;
         background-size: contain;
         border: none;
-        width: 20px;
-        height: 20px;
+        width: 40px;
+        height: 40px;
         cursor: pointer;
         padding-left: 20px;
+      }
+      .switch-button:hover {
+        opacity: 0.8; /* Add a hover effect for better interactivity */
       }
 
       .btnDelete {
         background: url("./Icons/btn_colse_f.png") no-repeat center center;
         background-size: contain;
         border: none;
-        width: 20px;
-        height: 20px;
+        width: 40px;
+        height: 40px;
         cursor: pointer;
       }
 
       .btnDelete:hover {
         opacity: 0.8; /* Add a hover effect for better interactivity */
       }
+
+      #addButton {
+        display: block; /* Make the button appear as a block element */
+        margin-bottom: 20px; /* Add spacing below the button */
+      }
     </style>
   </head>
 
   <body>
-    <h1>Floating Textboxes Generator</h1>
+    <h1>Pearl Gate Studio - Pearl Tools For Slope</h1>
     <button id="addButton">Add Textbox</button>
-    <div id="container"></div>
+    <div id="ElevationPoints"><b>ElevationPoints</b></div>
+    <div id="DistanceForPoints"><b>DistanceForPoints</b></div>
 
     <script>
-      const container = document.getElementById("container");
+      const container = document.getElementById("ElevationPoints");
+      const DistanceForPoints = document.getElementById("DistanceForPoints");
       const addButton = document.getElementById("addButton");
       let count = 0; // Start count for textboxes
       const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Alphabet for labels
 
-      addButton.addEventListener("click", () => {
+      initialize();
+
+      function initialize() {
+        addButton.addEventListener("click", () => {
+          // If it's the first click, create two textboxes
+          if (count === 0) {
+            createTextboxWrapper(); // Create the first textbox
+            createTextboxWrapper(); // Create the second textbox
+            createDistanceTextBoxWrapper(); // Create the first distance textbox
+          } else {
+            createTextboxWrapper(); // Create one textbox for subsequent clicks
+            createDistanceTextBoxWrapper(); // Create one distance textbox for subsequent clicks
+          }
+        });
+      }
+
+      function createTextboxWrapper() {
         if (count >= alphabet.length) {
           alert("Maximum number of textboxes reached!");
           return;
@@ -78,7 +118,7 @@
 
         // Create label
         const label = document.createElement("label");
-        label.textContent = `${alphabet[count]}:`;
+        label.textContent = `${alphabet[count]}:`; // Label based on the current count
 
         // Create textbox
         const textbox = document.createElement("input");
@@ -106,14 +146,38 @@
           });
           // Append the switch button to the wrapper
           wrapper.appendChild(switchButton);
+        }
 
-          // Add "Delete" button
+        // Add "Delete" button only if it's the third or subsequent textbox
+        if (count > 1) {
           const deleteButton = document.createElement("button");
           deleteButton.className = "btnDelete"; // Apply the CSS class for the icon
           deleteButton.addEventListener("click", () => {
             // Remove the wrapper from the container
             container.removeChild(wrapper);
+
+            // Remove the corresponding distance textbox (e.g., BC)
+            if (count > 2) {
+              const distanceWrappers =
+                DistanceForPoints.querySelectorAll(".textbox-wrapper");
+              const lastDistanceWrapper =
+                distanceWrappers[distanceWrappers.length - 1];
+              if (lastDistanceWrapper) {
+                DistanceForPoints.removeChild(lastDistanceWrapper);
+              }
+            }
+
             count--; // Decrement count
+
+            // Update the labels of all remaining textboxes
+            const wrappers = container.querySelectorAll(".textbox-wrapper");
+            wrappers.forEach((wrapper, index) => {
+              const label = wrapper.querySelector("label");
+              label.textContent = `${alphabet[index]}:`; // Update label based on the new index
+            });
+
+            // Update the distance labels
+            updateDistanceLabels();
           });
           wrapper.appendChild(deleteButton); // Append the delete button to the wrapper
         }
@@ -122,7 +186,40 @@
         container.appendChild(wrapper);
 
         count++; // Increment count
-      });
+      }
+
+      function createDistanceTextBoxWrapper() {
+        if (count > 1) {
+          // Create wrapper div
+          const wrapper = document.createElement("div");
+          wrapper.className = "textbox-wrapper"; // Ensure it uses the same class
+
+          // Create label
+          const label = document.createElement("label");
+          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`; // Label for distance (e.g., AB, BC)
+
+          // Create textbox
+          const textbox = document.createElement("input");
+          textbox.type = "number"; // Floating-point numbers only
+
+          // Append label and textbox to wrapper
+          wrapper.appendChild(label);
+          wrapper.appendChild(textbox);
+
+          // Append wrapper to DistanceForPoints container
+          DistanceForPoints.appendChild(wrapper);
+        }
+      }
+
+      function updateDistanceLabels() {
+        const wrappers = DistanceForPoints.querySelectorAll(".textbox-wrapper");
+        wrappers.forEach((wrapper, index) => {
+          if (index < count - 2) {
+            const label = wrapper.querySelector("label");
+            label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`; // Update distance labels (e.g., AB, BC)
+          }
+        });
+      }
     </script>
   </body>
 </html>
