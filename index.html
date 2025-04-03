@@ -3,27 +3,94 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rainbow Shifting Text</title>
+    <title>Floating Textboxes</title>
     <style>
-      #rainbowField {
-        font-size: 1.5em;
-        font-weight: bold;
-        padding: 10px;
-        width: 100%;
+      body {
+        font-family: Arial, sans-serif;
+        margin: 5px;
       }
 
-      #rainbowOutput {
-        font-size: 1.5em;
-        font-weight: bold;
-        white-space: pre-wrap; /* Preserves spaces and line breaks */
+      #container {
+        margin-top: 20px;
+      }
+
+      .textbox-wrapper {
+        display: flex; /* Use inline-flex to keep elements in a row */
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .textbox-wrapper label {
+        width: 15px; /* Fixed width for label */
+        margin-right: 5px; /* Reduce the gap between label and textbox */
+      }
+
+      .textbox-wrapper input {
+        width: 150px;
+        height: 30px;
       }
     </style>
   </head>
-  <body>
-    <h1>Type Below to See Rainbow Shifting Text!</h1>
-    <input type="text" id="rainbowField" placeholder="Type something..." />
-    <p id="rainbowOutput"></p>
 
-    <script src="rainbow-shifting.js"></script>
+  <body>
+    <h1>Floating Textboxes Generator</h1>
+    <button id="addButton">Add Textbox</button>
+    <div id="container"></div>
+
+    <script>
+      const container = document.getElementById("container");
+      const addButton = document.getElementById("addButton");
+      let count = 0; // Start count for textboxes
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Alphabet for labels
+
+      addButton.addEventListener("click", () => {
+        if (count >= alphabet.length) {
+          alert("Maximum number of textboxes reached!");
+          return;
+        }
+
+        // Create wrapper div
+        const wrapper = document.createElement("div");
+        wrapper.className = "textbox-wrapper";
+
+        // Create label
+        const label = document.createElement("label");
+        label.textContent = `${alphabet[count]}:`;
+
+        // Create textbox
+        const textbox = document.createElement("input");
+        textbox.type = "number"; // Floating-point numbers only
+
+        // Append label and textbox to wrapper
+        wrapper.appendChild(label);
+        wrapper.appendChild(textbox);
+
+        // Add "Switch" button only if it's not the first textbox
+        if (count > 0) {
+          const switchButton = document.createElement("button");
+          switchButton.textContent = "Switch";
+          switchButton.addEventListener("click", () => {
+            const previousWrapper = wrapper.previousElementSibling;
+            if (previousWrapper) {
+              const previousTextbox = previousWrapper.querySelector("input");
+              if (previousTextbox) {
+                // Swap values between the current and previous textboxes
+                const tempValue = previousTextbox.value;
+                previousTextbox.value = textbox.value;
+                textbox.value = tempValue;
+              }
+            }
+          });
+
+          // Append the switch button to the wrapper
+          wrapper.appendChild(switchButton);
+        }
+
+        // Append wrapper to container
+        container.appendChild(wrapper);
+
+        count++; // Increment count
+      });
+    </script>
   </body>
 </html>
