@@ -26,8 +26,31 @@
       }
 
       .textbox-wrapper input {
-        width: 150px;
+        width: 60px;
         height: 30px;
+      }
+
+      .switch-button {
+        background: url("/Icons/btn_refresh_f.png") no-repeat center center;
+        background-size: contain;
+        border: none;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        padding-left: 20px;
+      }
+
+      .btnDelete {
+        background: url("/Icons/btn_colse_f.png") no-repeat center center;
+        background-size: contain;
+        border: none;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      .btnDelete:hover {
+        opacity: 0.8; /* Add a hover effect for better interactivity */
       }
     </style>
   </head>
@@ -68,7 +91,7 @@
         // Add "Switch" button only if it's not the first textbox
         if (count > 0) {
           const switchButton = document.createElement("button");
-          switchButton.textContent = "Switch";
+          switchButton.className = "switch-button"; // Apply the CSS class for the icon
           switchButton.addEventListener("click", () => {
             const previousWrapper = wrapper.previousElementSibling;
             if (previousWrapper) {
@@ -81,9 +104,18 @@
               }
             }
           });
-
           // Append the switch button to the wrapper
           wrapper.appendChild(switchButton);
+
+          // Add "Delete" button
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "btnDelete"; // Apply the CSS class for the icon
+          deleteButton.addEventListener("click", () => {
+            // Remove the wrapper from the container
+            container.removeChild(wrapper);
+            count--; // Decrement count
+          });
+          wrapper.appendChild(deleteButton); // Append the delete button to the wrapper
         }
 
         // Append wrapper to container
