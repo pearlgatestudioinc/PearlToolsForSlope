@@ -552,51 +552,6 @@
         });
       }
 
-      function calculateSlope(index1, index2) {
-        // Retrieve elevation values
-        const elevationWrappers =
-          container.querySelectorAll(".textbox-wrapper");
-        const elevationA =
-          elevationWrappers[index1]?.querySelector("input")?.valueAsNumber || 0;
-        const elevationB =
-          elevationWrappers[index2]?.querySelector("input")?.valueAsNumber || 0;
-
-        // Log retrieved elevation values
-        console.log(`Elevation A (index ${index1}): ${elevationA}`);
-        console.log(`Elevation B (index ${index2}): ${elevationB}`);
-
-        // Retrieve distance value
-        const distanceWrappers =
-          DistanceForPoints.querySelectorAll(".textbox-wrapper");
-        const distanceAB =
-          distanceWrappers[index1]?.querySelector("input")?.valueAsNumber || 0;
-
-        // Log retrieved distance value
-        console.log(`Distance AB (index ${index1}): ${distanceAB}`);
-
-        // Validation checks
-        if (
-          isNaN(elevationA) ||
-          isNaN(elevationB) ||
-          isNaN(distanceAB) ||
-          distanceAB <= 0
-        ) {
-          console.warn(
-            `Invalid slope calculation for indices ${index1}-${index2}`
-          );
-          return null; // Return null for invalid inputs
-        }
-
-        // Calculate slope percentage
-        const slope = ((elevationB - elevationA) / distanceAB) * 100;
-        console.log(
-          `Slope calculated for indices ${index1}-${index2}: ${slope.toFixed(
-            2
-          )}%`
-        );
-        return slope.toFixed(2); // Return numeric value formatted to 2 decimal places
-      }
-
       function CreatePositionOverDistanceTextBoxWrapper() {
         if (count > 1) {
           // Create wrapper div
