@@ -88,6 +88,7 @@
         height: 40px;
         cursor: pointer;
       }
+
       .toggleButton_PointAEdit:hover {
         opacity: 0.8; /* Add a hover effect for better interactivity */
       }
@@ -164,6 +165,13 @@
       );
       const slopesContainer = document.getElementById("Slopes");
       const addButton = document.getElementById("addButton");
+      let activeSlopeToggleButton = null; // Track the active slope toggle button
+      // Global arrays to store references to textboxes
+      const elevationPointsTextboxes = [];
+      const distanceForPointsTextboxes = [];
+      const slopesTextboxes = [];
+      const positionOverDistanceTextboxes = [];
+
       let count = 0; // Start count for textboxes
       const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Alphabet for labels
 
@@ -171,7 +179,6 @@
 
       function initialize() {
         addButton.addEventListener("click", () => {
-          // If it's the first click, create two textboxes
           if (count === 0) {
             createTextboxWrapper(); // Create the first textbox
             createTextboxWrapper(); // Create the second textbox
@@ -184,88 +191,6 @@
             CreateSlopesTextBoxWrapper();
             CreatePositionOverDistanceTextBoxWrapper();
           }
-
-          // Add event listeners to DistanceForPoints textboxes
-          addDistanceForPointsListeners();
-        });
-
-        // Add listeners to elevation and distance textboxes
-        addListenersToTextboxes();
-      }
-
-      function addDistanceForPointsListeners() {
-        const distanceWrappers =
-          DistanceForPoints.querySelectorAll(".textbox-wrapper");
-        distanceWrappers.forEach((wrapper, index) => {
-          const distanceTextbox = wrapper.querySelector("input");
-          if (distanceTextbox) {
-            distanceTextbox.addEventListener("input", () => {
-              updatePositionOverDistanceValue(index);
-            });
-          }
-        });
-      }
-
-      function updatePositionOverDistanceValue(index) {
-        const positionWrappers =
-          PositionOverDistance.querySelectorAll(".textbox-wrapper");
-        if (index < positionWrappers.length) {
-          const positionWrapper = positionWrappers[index];
-          const distanceValue = positionWrapper.querySelector("i");
-          if (distanceValue) {
-            const distanceWrappers =
-              DistanceForPoints.querySelectorAll(".textbox-wrapper");
-            const distanceWrapper = distanceWrappers[index];
-            const distanceTextbox = distanceWrapper.querySelector("input");
-            const newValue = distanceTextbox?.valueAsNumber || 0;
-            console.log(
-              `Updating position over distance for index ${index}: ${newValue}`
-            );
-            distanceValue.textContent = newValue; // Update the italic distance value
-          }
-        }
-      }
-
-      function addListenersToTextboxes() {
-        const elevationWrappers =
-          container.querySelectorAll(".textbox-wrapper");
-        const distanceWrappers =
-          DistanceForPoints.querySelectorAll(".textbox-wrapper");
-
-        elevationWrappers.forEach((wrapper, index) => {
-          const elevationTextbox = wrapper.querySelector("input");
-          if (elevationTextbox) {
-            elevationTextbox.addEventListener("input", () => {
-              const newValue = elevationTextbox.valueAsNumber || 0;
-              console.log(
-                `Elevation point updated at index ${index}: ${newValue}`
-              );
-              updateSlopeLabels(); // Ensure slopes are recalculated dynamically
-            });
-
-            // Debug: Log initial listener attachment
-            console.log(
-              `Listener attached to elevation point at index ${index}`
-            );
-          }
-        });
-
-        distanceWrappers.forEach((wrapper, index) => {
-          const distanceTextbox = wrapper.querySelector("input");
-          if (distanceTextbox) {
-            distanceTextbox.addEventListener("input", () => {
-              const newValue = distanceTextbox.valueAsNumber || 0;
-              console.log(
-                `Distance point updated at index ${index}: ${newValue}`
-              );
-              updateSlopeLabels(); // Ensure slopes are recalculated dynamically
-            });
-
-            // Debug: Log initial listener attachment
-            console.log(
-              `Listener attached to distance point at index ${index}`
-            );
-          }
         });
       }
 
@@ -275,52 +200,45 @@
           return;
         }
 
-        // Create wrapper div
         const wrapper = document.createElement("div");
         wrapper.className = "textbox-wrapper";
 
-        // Create label
         const label = document.createElement("label");
-        label.textContent = `${alphabet[count]}:`; // Label based on the current count
+        label.textContent = `${alphabet[count]}:`;
 
-        // Create textbox
         const textbox = document.createElement("input");
-        textbox.type = "number"; // Floating-point numbers only
-        textbox.value = "0"; // Default value
+        textbox.type = "number";
+        textbox.value = "0";
 
-        // Append label and textbox to wrapper
         wrapper.appendChild(label);
         wrapper.appendChild(textbox);
 
-        // Add "Switch" button only if it's not the first textbox
+        // Add switch button
         if (count > 0) {
           const switchButton = document.createElement("button");
-          switchButton.className = "switch-button"; // Apply the CSS class for the icon
+          switchButton.className = "switch-button";
           switchButton.addEventListener("click", () => {
             const previousWrapper = wrapper.previousElementSibling;
             if (previousWrapper) {
               const previousTextbox = previousWrapper.querySelector("input");
               if (previousTextbox) {
-                // Swap values between the current and previous textboxes
                 const tempValue = previousTextbox.value;
                 previousTextbox.value = textbox.value;
                 textbox.value = tempValue;
               }
             }
           });
-          // Append the switch button to the wrapper
           wrapper.appendChild(switchButton);
         }
 
-        // Add "Delete" button only if it's the third or subsequent textbox
+        // Add delete button
         if (count > 1) {
           const deleteButton = document.createElement("button");
-          deleteButton.className = "btnDelete"; // Apply the CSS class for the icon
+          deleteButton.className = "btnDelete";
           deleteButton.addEventListener("click", () => {
-            // Remove the wrapper from the container
             container.removeChild(wrapper);
+            elevationPointsTextboxes.splice(count - 1, 1); // Remove from global array
 
-            // Remove the corresponding distance textbox (e.g., BC)
             if (count > 2) {
               const distanceWrappers =
                 DistanceForPoints.querySelectorAll(".textbox-wrapper");
@@ -328,294 +246,184 @@
                 distanceWrappers[distanceWrappers.length - 1];
               if (lastDistanceWrapper) {
                 DistanceForPoints.removeChild(lastDistanceWrapper);
+                distanceForPointsTextboxes.pop(); // Remove from global array
               }
-            }
 
-            // Remove the corresponding slope textbox (e.g., BC)
-            if (count > 2) {
               const slopeWrappers =
                 slopesContainer.querySelectorAll(".textbox-wrapper");
               const lastSlopeWrapper = slopeWrappers[slopeWrappers.length - 1];
               if (lastSlopeWrapper) {
                 slopesContainer.removeChild(lastSlopeWrapper);
+                slopesTextboxes.pop(); // Remove from global array
               }
-            }
 
-            // Remove the corresponding PositionOverDistance entry
-            if (count > 2) {
               const positionWrappers =
                 PositionOverDistance.querySelectorAll(".textbox-wrapper");
               const lastPositionWrapper =
                 positionWrappers[positionWrappers.length - 1];
               if (lastPositionWrapper) {
                 PositionOverDistance.removeChild(lastPositionWrapper);
+                positionOverDistanceTextboxes.pop(); // Remove from global array
               }
             }
 
-            count--; // Decrement count
-
-            // Update the labels of all remaining textboxes
-            const wrappers = container.querySelectorAll(".textbox-wrapper");
-            wrappers.forEach((wrapper, index) => {
-              const label = wrapper.querySelector("label");
-              label.textContent = `${alphabet[index]}:`; // Update label based on the new index
-            });
-
-            // Update the distance labels
-            updateDistanceLabels();
-
-            // Update the slope labels
-            updateSlopeLabels();
-
-            // Update the position over distance labels
-            updatePositionOverDistanceLabels();
+            count--;
+            updateLabels();
           });
-          wrapper.appendChild(deleteButton); // Append the delete button to the wrapper
+          wrapper.appendChild(deleteButton);
         }
 
-        // Append wrapper to container
         container.appendChild(wrapper);
-
-        count++; // Increment count
+        elevationPointsTextboxes.push(textbox); // Add to global array
+        count++;
       }
 
       function createDistanceTextBoxWrapper() {
         if (count > 1) {
-          // Create wrapper div
           const wrapper = document.createElement("div");
-          wrapper.className = "textbox-wrapper"; // Ensure it uses the same class
+          wrapper.className = "textbox-wrapper";
 
-          // Create label
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`; // Label for distance (e.g., AB, BC)
+          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
 
-          // Create textbox
           const textbox = document.createElement("input");
-          textbox.type = "number"; // Floating-point numbers only
-          textbox.value = "0"; // Default value
+          textbox.type = "number";
+          textbox.value = "0";
 
-          // Append label and textbox to wrapper
           wrapper.appendChild(label);
           wrapper.appendChild(textbox);
-
-          // Append wrapper to DistanceForPoints container
           DistanceForPoints.appendChild(wrapper);
+          distanceForPointsTextboxes.push(textbox); // Add to global array
         }
-      }
-
-      function updateDistanceLabels() {
-        const wrappers = DistanceForPoints.querySelectorAll(".textbox-wrapper");
-        wrappers.forEach((wrapper, index) => {
-          if (index < count - 2) {
-            const label = wrapper.querySelector("label");
-            label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`; // Update distance labels (e.g., AB, BC)
-          }
-        });
       }
 
       function CreateSlopesTextBoxWrapper() {
         if (count > 1) {
-          // Create wrapper div
           const wrapper = document.createElement("div");
-          wrapper.className = "textbox-wrapper"; // Ensure it uses the same class
+          wrapper.className = "textbox-wrapper";
 
-          // Create label
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`; // Label for slope (e.g., AB, BC)
+          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
 
-          // Create span to display the number with a percent sign
           const span = document.createElement("span");
-          span.textContent = "0.00%"; // Default value to display with two decimal places
-          span.style.marginLeft = "10px"; // Add spacing between the label and the span
+          span.textContent = "0.00%";
+          span.style.marginLeft = "10px";
 
-          // Create textbox (initially hidden)
           const textbox = document.createElement("input");
           textbox.type = "number";
-          textbox.value = "0"; // Default value
-          textbox.readOnly = true; // Make it non-editable by default
-          textbox.style.display = "none"; // Hide the textbox initially
+          textbox.value = "0";
+          textbox.readOnly = true;
+          textbox.style.display = "none";
 
-          // Create Point A Edit button
+          // Create the slope toggle button
           const toggleButton_PointAEdit = document.createElement("button");
-          toggleButton_PointAEdit.className = "toggleButton_PointAEdit"; // Apply the CSS class for the icon
-          toggleButton_PointAEdit.style.backgroundImage =
-            "url('./Icons/btn_up_n.png')";
+          toggleButton_PointAEdit.className = "toggleButton_PointAEdit";
           toggleButton_PointAEdit.addEventListener("click", () => {
-            toggleEditMode(
-              toggleButton_PointAEdit,
-              toggleButton_DistanceEdit,
-              textbox,
-              span,
-              "btn_up_f",
-              "btn_up_n"
-            );
+            toggleEditMode(toggleButton_PointAEdit, textbox, span);
           });
-
-          // Create Distance Edit button
           const toggleButton_DistanceEdit = document.createElement("button");
-          toggleButton_DistanceEdit.className = "toggleButton_DistanceEdit"; // Apply the CSS class for the icon
-          toggleButton_DistanceEdit.style.backgroundImage =
-            "url('./Icons/btn_next_n.png')";
+          toggleButton_DistanceEdit.className = "toggleButton_DistanceEdit";
           toggleButton_DistanceEdit.addEventListener("click", () => {
-            toggleEditMode(
-              toggleButton_DistanceEdit,
-              toggleButton_PointAEdit,
-              textbox,
-              span,
-              "btn_next_f",
-              "btn_next_n"
-            );
+            toggleEditMode(toggleButton_DistanceEdit, textbox, span);
           });
 
-          // Append label, span, textbox, and buttons to wrapper
           wrapper.appendChild(label);
           wrapper.appendChild(span);
           wrapper.appendChild(textbox);
           wrapper.appendChild(toggleButton_PointAEdit);
           wrapper.appendChild(toggleButton_DistanceEdit);
-
-          // Append wrapper to Slopes container
           slopesContainer.appendChild(wrapper);
+          slopesTextboxes.push(textbox); // Add to global array
         }
-      }
-
-      function toggleEditMode(
-        activeButton,
-        otherButton,
-        textbox,
-        span,
-        activeIcon,
-        inactiveIcon
-      ) {
-        // Check if the active button is already selected
-        const isActive = activeButton.classList.contains("active");
-
-        // Reset both buttons and hide the textbox
-        activeButton.classList.remove("active");
-        otherButton.classList.remove("active");
-        activeButton.style.backgroundImage = `url('./Icons/${inactiveIcon}.png')`;
-        otherButton.style.backgroundImage = `url('./Icons/${
-          otherButton.classList.contains("toggleButton_PointAEdit")
-            ? "btn_up_n"
-            : "btn_next_n"
-        }.png')`;
-        textbox.style.display = "none"; // Hide the textbox
-        span.style.display = "inline"; // Show the span
-        textbox.readOnly = true;
-
-        // Debug: Log the reset state
-        console.log("Toggle buttons reset. Textbox hidden, span visible.");
-
-        // If the active button was not already selected, toggle it on
-        if (!isActive) {
-          activeButton.classList.add("active");
-          activeButton.style.backgroundImage = `url('./Icons/${activeIcon}.png')`;
-          textbox.style.display = "inline"; // Show the textbox
-          span.style.display = "none"; // Hide the span
-          textbox.readOnly = false; // Make the textbox editable
-
-          // Sync the textbox value with the span text
-          const slopeValue = parseFloat(span.textContent.replace("%", "")) || 0;
-          textbox.value = slopeValue.toFixed(2); // Ensure valid numeric value with two decimal places
-
-          // Debug: Log the synced value
-          console.log(`Textbox value synced with span: ${textbox.value}`);
-
-          textbox.addEventListener("input", () => {
-            span.textContent = `${textbox.valueAsNumber.toFixed(2)}%`; // Update the span with two decimal places
-            console.log(`Textbox updated. New value: ${textbox.valueAsNumber}`);
-          });
-        }
-      }
-
-      function updateSlopeLabels() {
-        const wrappers = slopesContainer.querySelectorAll(".textbox-wrapper");
-        wrappers.forEach((wrapper, index) => {
-          if (index < count - 2) {
-            const label = wrapper.querySelector("label");
-            label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`; // Update slope labels (e.g., AB, BC)
-
-            const span = wrapper.querySelector("span");
-            if (span) {
-              const slope = calculateSlope(index, index + 1);
-              span.textContent =
-                slope !== null
-                  ? `${parseFloat(slope).toFixed(2)}%`
-                  : "Invalid Slope"; // Ensure two decimal places
-              console.log(
-                `Updated slope label for index ${index}-${index + 1}: ${
-                  span.textContent
-                }`
-              );
-            }
-          }
-        });
       }
 
       function CreatePositionOverDistanceTextBoxWrapper() {
         if (count > 1) {
-          // Create wrapper div
           const wrapper = document.createElement("div");
-          wrapper.className = "textbox-wrapper"; // Ensure it uses the same class
+          wrapper.className = "textbox-wrapper";
 
-          // Create label
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`; // Label for position over distance (e.g., AB, BC)
+          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
 
-          // Create textbox for user input
           const textbox = document.createElement("input");
-          textbox.type = "number"; // Floating-point numbers only
-          textbox.value = "0"; // Default value
-          textbox.style.marginRight = "10px"; // Add spacing between the textbox and the "of" text
+          textbox.type = "number";
+          textbox.value = "0";
+          textbox.style.marginRight = "10px";
 
-          // Create "of" text
           const ofText = document.createElement("span");
           ofText.textContent = "of";
 
-          // Create italic text for the distance value
           const distanceValue = document.createElement("i");
-          distanceValue.textContent = getDistanceValue(count - 2); // Get the corresponding distance value
-          distanceValue.style.marginLeft = "5px"; // Add spacing between "of" and the distance value
+          distanceValue.textContent = getDistanceValue(count - 2);
+          distanceValue.style.marginLeft = "5px";
 
-          // Append label, textbox, "of" text, and distance value to wrapper
           wrapper.appendChild(label);
           wrapper.appendChild(textbox);
           wrapper.appendChild(ofText);
           wrapper.appendChild(distanceValue);
-
-          // Append wrapper to PositionOverDistance container
           PositionOverDistance.appendChild(wrapper);
+          positionOverDistanceTextboxes.push(textbox); // Add to global array
         }
+      }
+
+      function updateLabels() {
+        const wrappers = container.querySelectorAll(".textbox-wrapper");
+        wrappers.forEach((wrapper, index) => {
+          const label = wrapper.querySelector("label");
+          label.textContent = `${alphabet[index]}:`;
+        });
+
+        updateDistanceLabels();
+      }
+
+      function updateDistanceLabels() {
+        const wrappers = DistanceForPoints.querySelectorAll(".textbox-wrapper");
+        wrappers.forEach((wrapper, index) => {
+          const label = wrapper.querySelector("label");
+          label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`;
+        });
       }
 
       function getDistanceValue(index) {
-        // Retrieve the corresponding distance value from DistanceForPoints
-        const distanceWrappers =
-          DistanceForPoints.querySelectorAll(".textbox-wrapper");
-        if (index < distanceWrappers.length) {
-          const distanceWrapper = distanceWrappers[index];
-          const distanceTextbox = distanceWrapper.querySelector("input");
-          return distanceTextbox?.valueAsNumber || 0; // Default to 0 if no value is set
+        if (index < distanceForPointsTextboxes.length) {
+          return distanceForPointsTextboxes[index]?.valueAsNumber || 0;
         }
-        return 0; // Default to 0 if no corresponding distance exists
+        return 0;
       }
 
-      function updatePositionOverDistanceLabels() {
-        const wrappers =
-          PositionOverDistance.querySelectorAll(".textbox-wrapper");
-        wrappers.forEach((wrapper, index) => {
-          if (index < count - 2) {
-            const label = wrapper.querySelector("label");
-            label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`; // Update position over distance labels (e.g., AB, BC)
+      function toggleEditMode(
+        toggleButton,
+        textbox,
+        span,
+        activeImage,
+        inactiveImage
+      ) {
+        if (
+          activeSlopeToggleButton == null ||
+          activeSlopeToggleButton == toggleButton
+        ) {
+          // Check if the button is in active mode
+          const isActive = toggleButton.classList.contains("active");
 
-            const distanceValue = wrapper.querySelector("i");
-            const newValue = getDistanceValue(index);
-            distanceValue.textContent = newValue; // Update the distance value
-            console.log(
-              `Updated position over distance label for index ${index}: ${newValue}`
-            );
+          if (isActive) {
+            // Disable edit mode
+            toggleButton.classList.remove("active");
+            textbox.style.display = "none";
+            textbox.readOnly = true;
+            activeSlopeToggleButton = null; // Reset the active button
+            // Update the span with the textbox value
+            span.textContent = `${textbox.value}%`;
+            span.style.display = "inline";
+          } else {
+            // Enable edit mode
+            toggleButton.classList.add("active");
+            textbox.style.display = "inline";
+            textbox.readOnly = false;
+            activeSlopeToggleButton = toggleButton; // Set the active button
+            // Hide the span while editing
+            span.style.display = "none";
           }
-        });
+        }
       }
     </script>
   </body>
