@@ -180,21 +180,23 @@
       function initialize() {
         addButton.addEventListener("click", () => {
           if (count === 0) {
-            createTextboxWrapper(); // Create the first textbox
-            createTextboxWrapper(); // Create the second textbox
+            addElevationPointTextbox(); // Create the first textbox
+            addElevationPointTextbox(); // Create the second textbox
             createDistanceTextBoxWrapper(); // Create the first distance textbox
             CreateSlopesTextBoxWrapper();
             CreatePositionOverDistanceTextBoxWrapper();
+            CalculateSlopes();
           } else {
-            createTextboxWrapper(); // Create one textbox for subsequent clicks
+            addElevationPointTextbox(); // Create one textbox for subsequent clicks
             createDistanceTextBoxWrapper(); // Create one distance textbox for subsequent clicks
             CreateSlopesTextBoxWrapper();
             CreatePositionOverDistanceTextBoxWrapper();
+            CalculateSlopes();
           }
         });
       }
 
-      function createTextboxWrapper() {
+      function addElevationPointTextbox() {
         if (count >= alphabet.length) {
           alert("Maximum number of textboxes reached!");
           return;
@@ -210,72 +212,87 @@
         textbox.type = "number";
         textbox.value = "0";
 
+        textbox.addEventListener("input", () => {
+          CalculateSlopes(); // Recalculate slopes when elevation changes
+        });
+
         wrapper.appendChild(label);
         wrapper.appendChild(textbox);
 
         // Add switch button
         if (count > 0) {
-          const switchButton = document.createElement("button");
-          switchButton.className = "switch-button";
-          switchButton.addEventListener("click", () => {
-            const previousWrapper = wrapper.previousElementSibling;
-            if (previousWrapper) {
-              const previousTextbox = previousWrapper.querySelector("input");
-              if (previousTextbox) {
-                const tempValue = previousTextbox.value;
-                previousTextbox.value = textbox.value;
-                textbox.value = tempValue;
-              }
-            }
-          });
-          wrapper.appendChild(switchButton);
+          addSwitchButton(wrapper, textbox);
         }
 
         // Add delete button
         if (count > 1) {
-          const deleteButton = document.createElement("button");
-          deleteButton.className = "btnDelete";
-          deleteButton.addEventListener("click", () => {
-            container.removeChild(wrapper);
-            elevationPointsTextboxes.splice(count - 1, 1); // Remove from global array
-
-            if (count > 2) {
-              const distanceWrappers =
-                DistanceForPoints.querySelectorAll(".textbox-wrapper");
-              const lastDistanceWrapper =
-                distanceWrappers[distanceWrappers.length - 1];
-              if (lastDistanceWrapper) {
-                DistanceForPoints.removeChild(lastDistanceWrapper);
-                distanceForPointsTextboxes.pop(); // Remove from global array
-              }
-
-              const slopeWrappers =
-                slopesContainer.querySelectorAll(".textbox-wrapper");
-              const lastSlopeWrapper = slopeWrappers[slopeWrappers.length - 1];
-              if (lastSlopeWrapper) {
-                slopesContainer.removeChild(lastSlopeWrapper);
-                slopesTextboxes.pop(); // Remove from global array
-              }
-
-              const positionWrappers =
-                PositionOverDistance.querySelectorAll(".textbox-wrapper");
-              const lastPositionWrapper =
-                positionWrappers[positionWrappers.length - 1];
-              if (lastPositionWrapper) {
-                PositionOverDistance.removeChild(lastPositionWrapper);
-                positionOverDistanceTextboxes.pop(); // Remove from global array
-              }
-            }
-
-            count--;
-            updateLabels();
-          });
-          wrapper.appendChild(deleteButton);
+          addDeleteButton(wrapper);
         }
 
         container.appendChild(wrapper);
         elevationPointsTextboxes.push(textbox); // Add to global array
         count++;
+      }
+
+      function addSwitchButton(wrapper, textbox) {
+        const switchButton = document.createElement("button");
+        switchButton.className = "switch-button";
+        switchButton.addEventListener("click", () => {
+          const previousTextbox = elevationPointsTextboxes[count - 1 - 1]; // Access previous textbox directly
+          if (previousTextbox) {
+            const tempValue = previousTextbox.value;
+            previousTextbox.value = textbox.value;
+            textbox.value = tempValue;
+          }
+        });
+        wrapper.appendChild(switchButton);
+      }
+
+      function addDeleteButton(wrapper) {
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btnDelete";
+        deleteButton.addEventListener("click", () => {
+          const index = elevationPointsTextboxes.indexOf(
+            wrapper.querySelector("input")
+          );
+          if (index !== -1) {
+            elevationPointsTextboxes.splice(index, 1); // Remove from global array
+          }
+
+          container.removeChild(wrapper);
+
+          if (count > 2) {
+            removeLastDistanceTextbox();
+            removeLastSlopeTextbox();
+            removeLastPositionOverDistanceTextbox();
+          }
+
+          count--;
+          updateLabels();
+          CalculateSlopes(); // Recalculate slopes after deletion
+        });
+        wrapper.appendChild(deleteButton);
+      }
+
+      function removeLastDistanceTextbox() {
+        if (distanceForPointsTextboxes.length > 0) {
+          const lastTextbox = distanceForPointsTextboxes.pop(); // Remove from global array
+          DistanceForPoints.removeChild(lastTextbox.parentElement);
+        }
+      }
+
+      function removeLastSlopeTextbox() {
+        if (slopesTextboxes.length > 0) {
+          const lastTextbox = slopesTextboxes.pop(); // Remove from global array
+          slopesContainer.removeChild(lastTextbox.parentElement);
+        }
+      }
+
+      function removeLastPositionOverDistanceTextbox() {
+        if (positionOverDistanceTextboxes.length > 0) {
+          const lastTextbox = positionOverDistanceTextboxes.pop(); // Remove from global array
+          PositionOverDistance.removeChild(lastTextbox.parentElement);
+        }
       }
 
       function createDistanceTextBoxWrapper() {
@@ -326,7 +343,6 @@
           toggleButton_DistanceEdit.addEventListener("click", () => {
             toggleEditMode(toggleButton_DistanceEdit, textbox, span);
           });
-
           wrapper.appendChild(label);
           wrapper.appendChild(span);
           wrapper.appendChild(textbox);
@@ -357,6 +373,16 @@
           distanceValue.textContent = getDistanceValue(count - 2);
           distanceValue.style.marginLeft = "5px";
 
+          // Update the PositionOverDistance textbox when the corresponding DistanceForPoints value changes
+          const correspondingDistanceTextbox =
+            distanceForPointsTextboxes[count - 2];
+          if (correspondingDistanceTextbox) {
+            correspondingDistanceTextbox.addEventListener("input", () => {
+              distanceValue.textContent = correspondingDistanceTextbox.value;
+              CalculateSlopes(); // Recalculate slopes when distance changes
+            });
+          }
+
           wrapper.appendChild(label);
           wrapper.appendChild(textbox);
           wrapper.appendChild(ofText);
@@ -367,8 +393,9 @@
       }
 
       function updateLabels() {
-        const wrappers = container.querySelectorAll(".textbox-wrapper");
-        wrappers.forEach((wrapper, index) => {
+        // Update labels for ElevationPoints using the global array
+        elevationPointsTextboxes.forEach((textbox, index) => {
+          const wrapper = textbox.parentElement;
           const label = wrapper.querySelector("label");
           label.textContent = `${alphabet[index]}:`;
         });
@@ -377,32 +404,27 @@
       }
 
       function updateDistanceLabels() {
-        const wrappers = DistanceForPoints.querySelectorAll(".textbox-wrapper");
-        wrappers.forEach((wrapper, index) => {
+        // Update labels for DistanceForPoints using the global array
+        distanceForPointsTextboxes.forEach((textbox, index) => {
+          const wrapper = textbox.parentElement;
           const label = wrapper.querySelector("label");
           label.textContent = `${alphabet[index]}${alphabet[index + 1]}:`;
         });
       }
 
       function getDistanceValue(index) {
+        // Use the global array to get the value directly
         if (index < distanceForPointsTextboxes.length) {
           return distanceForPointsTextboxes[index]?.valueAsNumber || 0;
         }
         return 0;
       }
 
-      function toggleEditMode(
-        toggleButton,
-        textbox,
-        span,
-        activeImage,
-        inactiveImage
-      ) {
+      function toggleEditMode(toggleButton, textbox, span) {
         if (
           activeSlopeToggleButton == null ||
           activeSlopeToggleButton == toggleButton
         ) {
-          // Check if the button is in active mode
           const isActive = toggleButton.classList.contains("active");
 
           if (isActive) {
@@ -411,8 +433,12 @@
             textbox.style.display = "none";
             textbox.readOnly = true;
             activeSlopeToggleButton = null; // Reset the active button
-            // Update the span with the textbox value
-            span.textContent = `${textbox.value}%`;
+
+            // Format the value to 2 decimal places
+            const formattedValue = isNaN(parseFloat(textbox.value))
+              ? "0.00"
+              : parseFloat(textbox.value).toFixed(2);
+            span.textContent = `${formattedValue}%`;
             span.style.display = "inline";
           } else {
             // Enable edit mode
@@ -420,8 +446,43 @@
             textbox.style.display = "inline";
             textbox.readOnly = false;
             activeSlopeToggleButton = toggleButton; // Set the active button
-            // Hide the span while editing
             span.style.display = "none";
+          }
+        }
+      }
+
+      function DisplaySlope(textbox, decimalValue) {
+        const wrapper = textbox.parentElement;
+        const span = wrapper.querySelector("span"); // Get the span element
+
+        if (!isNaN(decimalValue)) {
+          const percentValue = decimalValue * 100; // Convert to percentage
+          const newValue = `${percentValue.toFixed(2)}% (${decimalValue.toFixed(
+            2
+          )})`;
+          if (span) {
+            textbox.value = newValue; // Set the textbox value
+            span.textContent = newValue; // Update the span text
+          }
+        } else {
+          if (span) {
+            textbox.value = "Need More (NM)";
+            span.textContent = "Need More (NM)";
+          }
+        }
+      }
+
+      function CalculateSlopes() {
+        for (let i = 0; i < slopesTextboxes.length; i++) {
+          const elevation1 = parseFloat(elevationPointsTextboxes[i].value);
+          const elevation2 = parseFloat(elevationPointsTextboxes[i + 1].value);
+          const distance = parseFloat(distanceForPointsTextboxes[i].value);
+
+          if (!isNaN(elevation1) && !isNaN(elevation2) && !isNaN(distance)) {
+            const slope = (elevation2 - elevation1) / distance;
+            DisplaySlope(slopesTextboxes[i], slope); // Use DisplaySlope for formatting
+          } else {
+            DisplaySlope(slopesTextboxes[i], NaN); // Handle invalid input
           }
         }
       }
