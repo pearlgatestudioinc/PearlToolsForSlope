@@ -152,10 +152,10 @@
   <body>
     <h1>Pearl Gate Studio - Pearl Tools For Slope</h1>
     <button id="addButton">Add Textbox</button>
-    <div id="ElevationPoints"><b>ElevationPoints</b></div>
-    <div id="DistanceForPoints"><b>DistanceForPoints</b></div>
+    <div id="ElevationPoints"><b>Elevation Points</b></div>
+    <div id="DistanceForPoints"><b>Distance For Points</b></div>
     <div id="Slopes"><b>Slopes</b></div>
-    <div id="PositionOverDistance"><b>Position Over Distance</b></div>
+    <div id="PositionOverDistance"><b>Elevation at Distance</b></div>
 
     <script>
       const container = document.getElementById("ElevationPoints");
@@ -172,32 +172,32 @@
       const slopesTextboxes = [];
       const positionOverDistanceTextboxes = [];
 
-      let count = 0; // Start count for textboxes
+      let amtOfTextbox = 0; // Start count for textboxes
       const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Alphabet for labels
 
       initialize();
 
       function initialize() {
         addButton.addEventListener("click", () => {
-          if (count === 0) {
+          if (amtOfTextbox === 0) {
             addElevationPointTextbox(); // Create the first textbox
             addElevationPointTextbox(); // Create the second textbox
-            createDistanceTextBoxWrapper(); // Create the first distance textbox
+            createDistanceForPointsTextBoxWrapper(); // Create the first distance textbox
             CreateSlopesTextBoxWrapper();
-            CreatePositionOverDistanceTextBoxWrapper();
+            CreateElevationOverDistanceTextBoxWrapper();
             CalculateSlopes();
           } else {
             addElevationPointTextbox(); // Create one textbox for subsequent clicks
-            createDistanceTextBoxWrapper(); // Create one distance textbox for subsequent clicks
+            createDistanceForPointsTextBoxWrapper(); // Create one distance textbox for subsequent clicks
             CreateSlopesTextBoxWrapper();
-            CreatePositionOverDistanceTextBoxWrapper();
+            CreateElevationOverDistanceTextBoxWrapper();
             CalculateSlopes();
           }
         });
       }
 
       function addElevationPointTextbox() {
-        if (count >= alphabet.length) {
+        if (amtOfTextbox >= alphabet.length) {
           alert("Maximum number of textboxes reached!");
           return;
         }
@@ -206,7 +206,7 @@
         wrapper.className = "textbox-wrapper";
 
         const label = document.createElement("label");
-        label.textContent = `${alphabet[count]}:`;
+        label.textContent = `${alphabet[amtOfTextbox]}:`;
 
         const textbox = document.createElement("input");
         textbox.type = "number";
@@ -220,25 +220,26 @@
         wrapper.appendChild(textbox);
 
         // Add switch button
-        if (count > 0) {
+        if (amtOfTextbox > 0) {
           addSwitchButton(wrapper, textbox);
         }
 
         // Add delete button
-        if (count > 1) {
+        if (amtOfTextbox > 1) {
           addDeleteButton(wrapper);
         }
 
         container.appendChild(wrapper);
         elevationPointsTextboxes.push(textbox); // Add to global array
-        count++;
+        amtOfTextbox++;
       }
 
       function addSwitchButton(wrapper, textbox) {
         const switchButton = document.createElement("button");
         switchButton.className = "switch-button";
         switchButton.addEventListener("click", () => {
-          const previousTextbox = elevationPointsTextboxes[count - 1 - 1]; // Access previous textbox directly
+          const previousTextbox =
+            elevationPointsTextboxes[amtOfTextbox - 1 - 1]; // Access previous textbox directly
           if (previousTextbox) {
             const tempValue = previousTextbox.value;
             previousTextbox.value = textbox.value;
@@ -261,13 +262,13 @@
 
           container.removeChild(wrapper);
 
-          if (count > 2) {
+          if (amtOfTextbox > 2) {
             removeLastDistanceTextbox();
             removeLastSlopeTextbox();
             removeLastPositionOverDistanceTextbox();
           }
 
-          count--;
+          amtOfTextbox--;
           updateLabels();
           CalculateSlopes(); // Recalculate slopes after deletion
         });
@@ -290,18 +291,22 @@
 
       function removeLastPositionOverDistanceTextbox() {
         if (positionOverDistanceTextboxes.length > 0) {
-          const lastTextbox = positionOverDistanceTextboxes.pop(); // Remove from global array
-          PositionOverDistance.removeChild(lastTextbox.parentElement);
+          for (let i = 0; i < 2; i++) {
+            const lastTextbox = positionOverDistanceTextboxes.pop(); // Remove from global array
+            PositionOverDistance.removeChild(lastTextbox.parentElement);
+          }
         }
       }
 
-      function createDistanceTextBoxWrapper() {
-        if (count > 1) {
+      function createDistanceForPointsTextBoxWrapper() {
+        if (amtOfTextbox > 1) {
           const wrapper = document.createElement("div");
           wrapper.className = "textbox-wrapper";
 
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
+          label.textContent = `${alphabet[amtOfTextbox - 2]}${
+            alphabet[amtOfTextbox - 1]
+          }:`;
 
           const textbox = document.createElement("input");
           textbox.type = "number";
@@ -311,16 +316,22 @@
           wrapper.appendChild(textbox);
           DistanceForPoints.appendChild(wrapper);
           distanceForPointsTextboxes.push(textbox); // Add to global array
+
+          textbox.addEventListener("input", () => {
+            CalculateSlopes(); // Recalculate slopes when distance changes
+          });
         }
       }
 
       function CreateSlopesTextBoxWrapper() {
-        if (count > 1) {
+        if (amtOfTextbox > 1) {
           const wrapper = document.createElement("div");
           wrapper.className = "textbox-wrapper";
 
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
+          label.textContent = `${alphabet[amtOfTextbox - 2]}${
+            alphabet[amtOfTextbox - 1]
+          }:`;
 
           const span = document.createElement("span");
           span.textContent = "0.00%";
@@ -353,43 +364,72 @@
         }
       }
 
-      function CreatePositionOverDistanceTextBoxWrapper() {
-        if (count > 1) {
+      function CreateElevationOverDistanceTextBoxWrapper() {
+        if (amtOfTextbox > 1) {
           const wrapper = document.createElement("div");
           wrapper.className = "textbox-wrapper";
 
+          const calculationWrapper = document.createElement("div");
           const label = document.createElement("label");
-          label.textContent = `${alphabet[count - 2]}${alphabet[count - 1]}:`;
+          label.textContent = `${alphabet[amtOfTextbox - 2]}${
+            alphabet[amtOfTextbox - 1]
+          }:`;
 
-          const textbox = document.createElement("input");
-          textbox.type = "number";
-          textbox.value = "0";
-          textbox.style.marginRight = "10px";
+          if (positionOverDistanceTextboxes.length > 0) {
+            wrapper.style.paddingTop = "10px"; // Add padding to the top of the wrapper
+          }
+
+          const currentPosTextBox = document.createElement("input");
+          currentPosTextBox.type = "number";
+          currentPosTextBox.value = "0";
+          currentPosTextBox.style.marginRight = "10px";
 
           const ofText = document.createElement("span");
           ofText.textContent = "of";
 
           const distanceValue = document.createElement("i");
-          distanceValue.textContent = getDistanceValue(count - 2);
           distanceValue.style.marginLeft = "5px";
 
-          // Update the PositionOverDistance textbox when the corresponding DistanceForPoints value changes
-          const correspondingDistanceTextbox =
-            distanceForPointsTextboxes[count - 2];
-          if (correspondingDistanceTextbox) {
-            correspondingDistanceTextbox.addEventListener("input", () => {
-              distanceValue.textContent = correspondingDistanceTextbox.value;
-              CalculateSlopes(); // Recalculate slopes when distance changes
-            });
+          // Get the correct index for the corresponding distance textbox
+          const correspondingIndex = amtOfTextbox - 2;
+          distanceValue.textContent = getDistanceValue(correspondingIndex);
+
+          const calculatedLabel = document.createElement("label");
+          calculatedLabel.textContent = `Elevation at ${0}`;
+
+          const correspondingDistanceForPointsTextbox =
+            distanceForPointsTextboxes[correspondingIndex];
+          if (correspondingDistanceForPointsTextbox) {
+            // Use a closure to capture the correct index
+            correspondingDistanceForPointsTextbox.addEventListener(
+              "input",
+              () => {
+                distanceValue.textContent =
+                  getDistanceValue(correspondingIndex); // Update the distance value
+              }
+            );
           }
 
           wrapper.appendChild(label);
-          wrapper.appendChild(textbox);
+          wrapper.appendChild(currentPosTextBox);
           wrapper.appendChild(ofText);
           wrapper.appendChild(distanceValue);
+          calculationWrapper.appendChild(calculatedLabel);
+
           PositionOverDistance.appendChild(wrapper);
-          positionOverDistanceTextboxes.push(textbox); // Add to global array
+          PositionOverDistance.appendChild(calculationWrapper);
+          positionOverDistanceTextboxes.push(currentPosTextBox); // Add to global array
+          positionOverDistanceTextboxes.push(calculatedLabel); // Add to global array
         }
+      }
+
+      function CalculateElevationAtDistance(elvAtDistance) {
+        const slopeAmount = getSlopeValue(amtOfTextbox - 2); // Get the slope value
+        const elvResult = elvAtDistance * slopeAmount; // Calculate the elevation at distance
+        const elevation1 = parseFloat(
+          elevationPointsTextboxes[amtOfTextbox - 1].value
+        );
+        elvAtDistance.textContent = `Elevation at ${slopeAmount}`;
       }
 
       function updateLabels() {
@@ -419,7 +459,13 @@
         }
         return 0;
       }
-
+      function getSlopeValue(index) {
+        // Use the global array to get the value directly
+        if (index < slopesTextboxes.length) {
+          return slopesTextboxes[index]?.valueAsNumber || 0;
+        }
+        return 0;
+      }
       function toggleEditMode(toggleButton, textbox, span) {
         if (
           activeSlopeToggleButton == null ||
