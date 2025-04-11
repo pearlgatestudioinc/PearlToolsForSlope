@@ -111,7 +111,8 @@
 
       @media (max-width: 480px) {
         #ElevationPoints,
-        #DistanceForPoints {
+        #DistanceForPoints #ToolExample,
+        #CarExample {
           display: inline-block;
           margin-right: 5px; /* Reduce margin for smaller screens */
           width: 48%; /* Slightly reduce width to prevent wrapping */
@@ -146,6 +147,10 @@
         height: 40px;
         cursor: pointer;
       }
+
+      #ToolExample {
+        border-radius: 10%; /* Makes the image round */
+      }
     </style>
   </head>
 
@@ -156,7 +161,8 @@
     <div id="DistanceForPoints"><b>Distance For Points</b></div>
     <div id="Slopes"><b>Slopes</b></div>
     <div id="PositionOverDistance"><b>Elevation at Distance</b></div>
-
+    <div><img id="ToolExample" src="./images/ToolExample.png" alt="" /></div>
+    <div><img id="CarExample" src="./images/car Example.png" alt="" /></div>
     <script>
       const container = document.getElementById("ElevationPoints");
       const DistanceForPoints = document.getElementById("DistanceForPoints");
@@ -395,7 +401,14 @@
           distanceValue.textContent = getDistanceValue(correspondingIndex);
 
           const calculatedLabel = document.createElement("label");
-          calculatedLabel.textContent = `Elevation at ${0}`;
+          // calculatedLabel.textContent = `Elevation at ${0}`;
+
+          const elevation1 = elevationPointsTextboxes[correspondingIndex]; // Get the corresponding elevation textbox
+
+          currentPosTextBox.addEventListener("input", () => {
+            console.log(elevation1.value);
+            CalculateElevationAtDistance(calculatedLabel, elevation1.value); // Update the elevation value
+          });
 
           const correspondingDistanceForPointsTextbox =
             distanceForPointsTextboxes[correspondingIndex];
@@ -423,14 +436,7 @@
         }
       }
 
-      function CalculateElevationAtDistance(elvAtDistance) {
-        const slopeAmount = getSlopeValue(amtOfTextbox - 2); // Get the slope value
-        const elvResult = elvAtDistance * slopeAmount; // Calculate the elevation at distance
-        const elevation1 = parseFloat(
-          elevationPointsTextboxes[amtOfTextbox - 1].value
-        );
-        elvAtDistance.textContent = `Elevation at ${slopeAmount}`;
-      }
+      function CalculateElevationAtDistance(elvAtDistance, index) {}
 
       function updateLabels() {
         // Update labels for ElevationPoints using the global array
@@ -456,6 +462,13 @@
         // Use the global array to get the value directly
         if (index < distanceForPointsTextboxes.length) {
           return distanceForPointsTextboxes[index]?.valueAsNumber || 0;
+        }
+        return 0;
+      }
+      function getElevationValue(index) {
+        // Use the global array to get the value directly
+        if (index < elevationPointsTextboxes.length) {
+          return elevationPointsTextboxes[index]?.valueAsNumber || 0;
         }
         return 0;
       }
