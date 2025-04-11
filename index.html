@@ -350,10 +350,10 @@
           textbox.style.display = "none";
 
           // Create the slope toggle button
-          const toggleButton_PointAEdit = document.createElement("button");
-          toggleButton_PointAEdit.className = "toggleButton_PointAEdit";
-          toggleButton_PointAEdit.addEventListener("click", () => {
-            toggleEditMode(toggleButton_PointAEdit, textbox, span);
+          const toggleButton_PointBEdit = document.createElement("button");
+          toggleButton_PointBEdit.className = "toggleButton_PointAEdit";
+          toggleButton_PointBEdit.addEventListener("click", () => {
+            toggleEditMode(toggleButton_PointBEdit, textbox, span);
           });
           const toggleButton_DistanceEdit = document.createElement("button");
           toggleButton_DistanceEdit.className = "toggleButton_DistanceEdit";
@@ -363,7 +363,7 @@
           wrapper.appendChild(label);
           wrapper.appendChild(span);
           wrapper.appendChild(textbox);
-          wrapper.appendChild(toggleButton_PointAEdit);
+          wrapper.appendChild(toggleButton_PointBEdit);
           wrapper.appendChild(toggleButton_DistanceEdit);
           slopesContainer.appendChild(wrapper);
           slopesTextboxes.push(textbox); // Add to global array
@@ -401,13 +401,9 @@
           distanceValue.textContent = getDistanceValue(correspondingIndex);
 
           const calculatedLabel = document.createElement("label");
-          // calculatedLabel.textContent = `Elevation at ${0}`;
-
-          const elevation1 = elevationPointsTextboxes[correspondingIndex]; // Get the corresponding elevation textbox
-
+ 
           currentPosTextBox.addEventListener("input", () => {
-            console.log(elevation1.value);
-            CalculateElevationAtDistance(calculatedLabel, elevation1.value); // Update the elevation value
+            CalculateElevationAtDistance(calculatedLabel, correspondingIndex); // Update the elevation value
           });
 
           const correspondingDistanceForPointsTextbox =
@@ -436,7 +432,30 @@
         }
       }
 
-      function CalculateElevationAtDistance(elvAtDistance, index) {}
+      function CalculateElevationAtDistance(elvAtDistance, index) {
+        const currentPosTextbox = positionOverDistanceTextboxes[index * 2]; // Get the current position textbox
+        const calculatedLabel = positionOverDistanceTextboxes[index * 2 + 1]; // Get the corresponding label
+
+        const currentPos = parseFloat(currentPosTextbox.value); // Current position value
+        const distance = getDistanceValue(index); // Total distance for the segment
+        const elevation1 = getElevationValue(index); // Starting elevation
+
+        // Correctly retrieve and parse the slope value
+        const slopeSpan = slopesTextboxes[index]?.parentElement.querySelector("span");
+        const slopeText = slopeSpan?.textContent.split("%")[0]; // Extract the numeric part of the slope
+        const slope = parseFloat(slopeText) / 100; // Convert to decimal
+
+        if (!isNaN(currentPos) && !isNaN(distance) && !isNaN(elevation1) && !isNaN(slope)) {
+          if (currentPos >= 0 && currentPos <= distance) {
+            const elevationAtDistance = elevation1 + slope * currentPos; // Calculate elevation
+            elvAtDistance.textContent = `Elevation: ${elevationAtDistance.toFixed(2)}`; // Update label
+          } else {
+            elvAtDistance.textContent = "Out of range"; // Handle out-of-range input
+          }
+        } else {
+          elvAtDistance.textContent = "Invalid input"; // Handle invalid input
+        }
+      }
 
       function updateLabels() {
         // Update labels for ElevationPoints using the global array
@@ -493,12 +512,20 @@
             textbox.readOnly = true;
             activeSlopeToggleButton = null; // Reset the active button
 
-            // Format the value to 2 decimal places
-            const formattedValue = isNaN(parseFloat(textbox.value))
-              ? "0.00"
-              : parseFloat(textbox.value).toFixed(2);
-            span.textContent = `${formattedValue}%`;
+            // Use DisplaySlope to format and display the value
+            const decimalValue = parseFloat(textbox.value) / 100; // Convert back to decimal
+            DisplaySlope(textbox, decimalValue);
             span.style.display = "inline";
+
+            // Perform calculations based on the toggle button type
+            if (toggleButton.classList.contains("toggleButton_PointAEdit")) {
+              adjustPointBForSlope(textbox, decimalValue); // Adjust Point B elevation
+            } else if (toggleButton.classList.contains("toggleButton_DistanceEdit")) {
+              adjustDistanceForSlope(textbox, decimalValue); // Adjust distance
+            }
+
+            // Recalculate all slopes and update all categories
+            CalculateSlopes();
           } else {
             // Enable edit mode
             toggleButton.classList.add("active");
@@ -506,6 +533,36 @@
             textbox.readOnly = false;
             activeSlopeToggleButton = toggleButton; // Set the active button
             span.style.display = "none";
+
+            // Set the textbox value to the current percentage/text
+            const currentText = span.textContent.split("%")[0]; // Extract the numeric part
+            textbox.value = currentText.trim(); // Set the value in the textbox
+          }
+        }
+      }
+
+      function adjustPointBForSlope(textbox, slope) {
+        const index = slopesTextboxes.indexOf(textbox); // Get the index of the slope textbox
+        if (index !== -1) {
+          const elevation1 = getElevationValue(index); // Get Point A elevation
+          const distance = getDistanceValue(index); // Get the distance between A and B
+
+          if (!isNaN(elevation1) && !isNaN(distance)) {
+            const newElevationB = elevation1 + slope * distance; // Adjust Point B elevation
+            elevationPointsTextboxes[index + 1].value = newElevationB.toFixed(2); // Update Point B elevation
+          }
+        }
+      }
+
+      function adjustDistanceForSlope(textbox, slope) {
+        const index = slopesTextboxes.indexOf(textbox); // Get the index of the slope textbox
+        if (index !== -1) {
+          const elevation1 = getElevationValue(index); // Get Point A elevation
+          const elevation2 = getElevationValue(index + 1); // Get Point B elevation
+
+          if (!isNaN(elevation1) && !isNaN(elevation2)) {
+            const newDistance = (elevation2 - elevation1) / slope; // Adjust distance
+            distanceForPointsTextboxes[index].value = newDistance.toFixed(2); // Update distance
           }
         }
       }
